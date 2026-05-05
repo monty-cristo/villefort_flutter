@@ -12,12 +12,17 @@ class MachineViewer<S extends Object, E extends Object> extends StatefulWidget {
 
   final GenerateEventFactory<S, E> generate;
 
+  /// Optionally returns a highlight color for an event's arrow and badge.
+  /// Return null to use the default grey styling.
+  final Color? Function(E)? eventColor;
+
   const MachineViewer({
     super.key,
     required this.title,
     required this.initial,
     required this.transition,
     required this.generate,
+    this.eventColor,
   });
 
   @override
@@ -83,6 +88,8 @@ class _MachineViewerState<S extends Object, E extends Object>
               graph: graph,
               initial: widget.initial,
               active: _current,
+              onEvent: _send,
+              eventColor: widget.eventColor,
             ),
           ),
           // ── Inspector panel ───────────────────────────────────────────────

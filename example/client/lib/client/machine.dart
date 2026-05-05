@@ -62,6 +62,8 @@ sealed class ClientState {
         ),
       ) =>
         (attemptA == attemptB) && (attemptsA == attemptsB),
+      (ClientStateIdle(), ClientStateIdle()) => true,
+      (ClientStateReconnected(), ClientStateReconnected()) => true,
       _ => false,
     };
   }
@@ -69,30 +71,50 @@ sealed class ClientState {
   @override
   int get hashCode {
     return switch (this) {
-      ClientStateConnecting() => 1,
+      ClientStateConnecting(:final attempt, :final attempts) => Object.hash(
+        1,
+        attempt,
+        attempts,
+      ),
       ClientStateConnected() => 2,
       ClientStateDisconnecting() => 3,
       ClientStateDisconnected() => 4,
-      ClientStateReconnecting() => 5,
+      ClientStateReconnecting(:final attempt, :final attempts) => Object.hash(
+        5,
+        attempt,
+        attempts,
+      ),
       ClientStateError(:final error) => Object.hash(6, error),
-      ClientStateWaitingToRetryConnect() => 7,
-      ClientStateWaitingToRetryReconnect() => 8,
+      ClientStateWaitingToRetryConnect(:final attempt, :final attempts) =>
+        Object.hash(7, attempt, attempts),
+      ClientStateWaitingToRetryReconnect(:final attempt, :final attempts) =>
+        Object.hash(8, attempt, attempts),
+      ClientStateIdle() => 9,
+      ClientStateReconnected() => 10,
     };
   }
 
   @override
   String toString() {
     return switch (this) {
-      ClientStateConnecting() => 'Connecting',
+      ClientStateConnecting(:final attempt, :final attempts) =>
+        'Connecting(attempt: $attempt, attemps: $attempts)',
       ClientStateConnected() => 'Connected',
       ClientStateDisconnecting() => 'Disconnecting',
       ClientStateDisconnected() => 'Disconnected',
-      ClientStateReconnecting() => 'Reconnecting',
+      ClientStateReconnecting(:final attempt, :final attempts) =>
+        'Reconnecting(attempt: $attempt, attemps: $attempts)',
       ClientStateError(:final error) => 'Error($error)',
       ClientStateWaitingToRetryConnect() => 'WaitingToRetryConnect',
       ClientStateWaitingToRetryReconnect() => 'WaitingToRetryReconnect',
+      ClientStateIdle() => 'Idle',
+      ClientStateReconnected() => 'Connected',
     };
   }
+}
+
+final class ClientStateIdle extends ClientState {
+  const ClientStateIdle();
 }
 
 final class ClientStateConnecting extends ClientState {
@@ -122,6 +144,10 @@ final class ClientStateReconnecting extends ClientState {
     required this.attempt,
     required this.attempts,
   });
+}
+
+final class ClientStateReconnected extends ClientState {
+  const ClientStateReconnected();
 }
 
 final class ClientStateWaitingToRetryConnect extends ClientState {
@@ -160,7 +186,11 @@ sealed class ClientEvent {
   @override
   bool operator ==(Object other) {
     return switch ((this, other)) {
-      (ClientEventConnect(), ClientEventConnect()) => true,
+      (
+        ClientEventConnect(attempts: final attemptsA),
+        ClientEventConnect(attempts: final attemptsB),
+      ) =>
+        attemptsA == attemptsB,
       (ClientEventConnectOk(), ClientEventConnectOk()) => true,
       (
         ClientEventConnectErr(error: final errorA),
@@ -174,7 +204,11 @@ sealed class ClientEvent {
         ClientEventDisconnectErr(error: final errorB),
       ) =>
         errorA == errorB,
-      (ClientEventReconnect(), ClientEventReconnect()) => true,
+      (
+        ClientEventReconnect(attempts: final attemptsA),
+        ClientEventReconnect(attempts: final attemptsB),
+      ) =>
+        attemptsA == attemptsB,
       (ClientEventReconnectOk(), ClientEventReconnectOk()) => true,
       (
         ClientEventReconnectErr(error: final errorA),
@@ -183,7 +217,6 @@ sealed class ClientEvent {
         errorA == errorB,
       (ClientEventRetry(), ClientEventRetry()) => true,
       (ClientEventDisconnected(), ClientEventDisconnected()) => true,
-
       (ClientEventAwaitedRetryConnect(), ClientEventAwaitedRetryConnect()) =>
         true,
       (
@@ -198,13 +231,13 @@ sealed class ClientEvent {
   @override
   int get hashCode {
     return switch (this) {
-      ClientEventConnect() => 1,
+      ClientEventConnect(:final attempts) => Object.hash(1, attempts),
       ClientEventConnectOk() => 2,
       ClientEventConnectErr(:final error) => Object.hash(3, error),
       ClientEventDisconnect() => 4,
       ClientEventDisconnectOk() => 5,
       ClientEventDisconnectErr(:final error) => Object.hash(6, error),
-      ClientEventReconnect() => 8,
+      ClientEventReconnect(:final attempts) => Object.hash(8, attempts),
       ClientEventReconnectOk() => 9,
       ClientEventReconnectErr(:final error) => Object.hash(10, error),
       ClientEventRetry() => 11,
@@ -217,13 +250,13 @@ sealed class ClientEvent {
   @override
   String toString() {
     return switch (this) {
-      ClientEventConnect() => 'Connect',
+      ClientEventConnect(:final attempts) => 'Connect(attemps: $attempts)',
       ClientEventConnectOk() => 'Connect[OK]',
       ClientEventConnectErr(:final error) => 'Connect[Err($error)]',
       ClientEventDisconnect() => 'Disconnect',
       ClientEventDisconnectOk() => 'Disconnect[OK]',
       ClientEventDisconnectErr(:final error) => 'Disconnect[Err($error)]',
-      ClientEventReconnect() => 'Reconnect',
+      ClientEventReconnect(:final attempts) => 'Connect(attemps: $attempts)',
       ClientEventReconnectOk() => 'Reconnect[OK]',
       ClientEventReconnectErr(:final error) => 'Reconnect[Err($error)]',
       ClientEventRetry() => 'Retry',
@@ -234,7 +267,11 @@ sealed class ClientEvent {
   }
 }
 
-final class ClientEventConnect extends ClientEvent {}
+final class ClientEventConnect extends ClientEvent {
+  final int attempts;
+
+  const ClientEventConnect({required this.attempts});
+}
 
 final class ClientEventConnectOk extends ClientEvent {}
 
@@ -254,7 +291,11 @@ final class ClientEventDisconnectErr extends ClientEvent {
   const ClientEventDisconnectErr(this.error);
 }
 
-final class ClientEventReconnect extends ClientEvent {}
+final class ClientEventReconnect extends ClientEvent {
+  final int attempts;
+
+  const ClientEventReconnect({required this.attempts});
+}
 
 final class ClientEventReconnectOk extends ClientEvent {}
 
@@ -321,6 +362,12 @@ final class ClientErrorReconnect extends ClientError {}
 Option<ClientState> transition(ClientState state, ClientEvent event) {
   return switch ((state, event)) {
     /* -------------------------------------------------------------------------- */
+    /*                   S: Idle => E: Connect => S: Connecting                   */
+    /* -------------------------------------------------------------------------- */
+    (ClientStateIdle(), ClientEventConnect(:final attempts)) => Some(
+      ClientStateConnecting(attempt: 0, attempts: attempts),
+    ),
+    /* -------------------------------------------------------------------------- */
     /*                S: Connecting => E: ConnectOk => S: Connected               */
     /* -------------------------------------------------------------------------- */
     (ClientStateConnecting(), ClientEventConnectOk()) => Some(
@@ -356,6 +403,26 @@ Option<ClientState> transition(ClientState state, ClientEvent event) {
     (ClientStateDisconnected(), ClientEventReconnect()) =>
       // Some(ClientStateReconnecting()),
       None(),
+
+    // S: Connecting => E: ConnectErr g(attempt < attempts - 1) => S: WaitToRetryConnect
+    (
+      ClientStateConnecting(:final attempt, :final attempts),
+      ClientEventConnectErr(),
+    )
+        when attempt < attempts - 1 =>
+      Some(
+        ClientStateWaitingToRetryConnect(
+          attempt: attempt + 1,
+          attempts: attempts,
+        ),
+      ),
+
+    // S: WaitingForRetryConnect => E: AwaitedRetryConnect => S: Connecting
+    (
+      ClientStateWaitingToRetryConnect(:final attempt, :final attempts),
+      ClientEventAwaitedRetryConnect(),
+    ) =>
+      Some(ClientStateConnecting(attempt: attempt, attempts: attempts)),
     /* -------------------------------------------------------------------------- */
     /*                S: Connecting => E: ConnectError => S: Error                */
     /* -------------------------------------------------------------------------- */

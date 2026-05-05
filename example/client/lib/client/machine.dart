@@ -108,7 +108,7 @@ sealed class ClientState {
       ClientStateWaitingToRetryConnect() => 'WaitingToRetryConnect',
       ClientStateWaitingToRetryReconnect() => 'WaitingToRetryReconnect',
       ClientStateIdle() => 'Idle',
-      ClientStateReconnected() => 'Connected',
+      ClientStateReconnected() => 'Reconnected',
     };
   }
 }
@@ -374,17 +374,17 @@ Option<ClientState> transition(ClientState state, ClientEvent event) {
       ClientStateConnected(),
     ),
     /* -------------------------------------------------------------------------- */
-    /*              S: Reconnecting => E: ReconnectOk => S: Connected             */
+    /*              S: Reconnecting => E: ReconnectOk => S: Reconnected           */
     /* -------------------------------------------------------------------------- */
     (ClientStateReconnecting(), ClientEventReconnectOk()) => Some(
-      ClientStateConnected(),
+      ClientStateReconnected(),
     ),
     /* -------------------------------------------------------------------------- */
     /*             S: Connected => E: Disconnected => S: Reconnecting             */
     /* -------------------------------------------------------------------------- */
-    (ClientStateConnected(), ClientEventDisconnected()) =>
-      // Some(ClientStateReconnecting()),
-      None(),
+    (ClientStateConnected(), ClientEventDisconnected()) => Some(
+      ClientStateReconnecting(attempt: 0, attempts: 3),
+    ), //FIXME: hardcoded attempts
     /* -------------------------------------------------------------------------- */
     /*              S: Connected => E: Disconnect => S: Disconnected              */
     /* -------------------------------------------------------------------------- */
@@ -400,10 +400,9 @@ Option<ClientState> transition(ClientState state, ClientEvent event) {
     /* -------------------------------------------------------------------------- */
     /*             S: Disconnected => E: Reconnect => S: Reconnecting             */
     /* -------------------------------------------------------------------------- */
-    (ClientStateDisconnected(), ClientEventReconnect()) =>
-      // Some(ClientStateReconnecting()),
-      None(),
-
+    (ClientStateDisconnected(), ClientEventReconnect(:final attempts)) => Some(
+      ClientStateReconnecting(attempt: 0, attempts: attempts),
+    ),
     // S: Connecting => E: ConnectErr g(attempt < attempts - 1) => S: WaitToRetryConnect
     (
       ClientStateConnecting(:final attempt, :final attempts),
@@ -443,12 +442,19 @@ Option<ClientState> transition(ClientState state, ClientEvent event) {
     /* -------------------------------------------------------------------------- */
     /*                     S: Error => E: retry => S: S(error)                    */
     /* -------------------------------------------------------------------------- */
-    (ClientStateError(:final error), ClientEventRetry()) => None(),
-    // Some(switch (error) {
-    // // ClientErrorConnect() => ClientStateConnecting(),
-    // // ClientErrorDisconnect() => ClientStateDisconnecting(),
-    // // ClientErrorReconnect() => ClientStateReconnecting(),
-    // }),
+    (ClientStateError(:final error), ClientEventRetry()) => Some(
+      switch (error) {
+        ClientErrorConnect() => ClientStateConnecting(
+          attempt: 0,
+          attempts: 3,
+        ), //FIXME: hardcoded attempts
+        ClientErrorDisconnect() => ClientStateDisconnecting(),
+        ClientErrorReconnect() => ClientStateReconnecting(
+          attempt: 0,
+          attempts: 3,
+        ), //FIXME: hardcoded attempts
+      },
+    ),
     (_, _) => const None(),
   };
 }

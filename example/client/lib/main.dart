@@ -11,7 +11,7 @@ List<ClientEvent> generate(ClientState state) {
     ],
     ClientStateConnected() => [
       ClientEventDisconnect(),
-      ClientEventDisconnect(),
+      ClientEventDisconnected(),
     ],
     ClientStateDisconnecting() => [
       ClientEventDisconnectOk(),
@@ -30,7 +30,7 @@ List<ClientEvent> generate(ClientState state) {
     ClientStateIdle() => [ClientEventConnect(attempts: 3)],
     ClientStateReconnected() => [
       ClientEventDisconnect(),
-      ClientEventDisconnect(),
+      ClientEventDisconnected(),
     ],
   };
 }
@@ -64,6 +64,7 @@ class ClientMachineViewerApp extends StatelessWidget {
           ClientEventReconnectErr() => Colors.red,
           _ => null,
         },
+        //sameGroup: (a, b) => a.runtimeType == b.runtimeType,
       ),
     );
   }

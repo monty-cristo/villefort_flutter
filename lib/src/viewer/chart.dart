@@ -52,6 +52,8 @@ class _BadgeInfo<S extends Object, E extends Object> {
 /// Tapping an edge badge calls [onEvent] with the corresponding event.
 /// [eventColor] optionally returns a highlight color per event; returning
 /// null falls back to the default grey.
+/// [stateLabel] overrides the text shown inside each node; defaults to
+/// [Object.toString]. Use this when grouped states need a dynamic label.
 class StateMachineChart<S extends Object, E extends Object>
     extends StatefulWidget {
   final S active;
@@ -59,6 +61,7 @@ class StateMachineChart<S extends Object, E extends Object>
   final Graph<S, E> graph;
   final void Function(E)? onEvent;
   final Color? Function(E)? eventColor;
+  final String Function(S)? stateLabel;
 
   const StateMachineChart({
     super.key,
@@ -67,6 +70,7 @@ class StateMachineChart<S extends Object, E extends Object>
     required this.initial,
     this.onEvent,
     this.eventColor,
+    this.stateLabel,
   });
 
   @override
@@ -362,6 +366,7 @@ class _StateMachineChartState<S extends Object, E extends Object>
                 initial: widget.initial,
                 active: widget.active,
                 eventColor: widget.eventColor,
+                stateLabel: widget.stateLabel ?? (s) => s.toString(),
               ),
             ),
             for (final badge in _badges)
@@ -403,20 +408,26 @@ class _ChartPainter<S extends Object, E extends Object> extends CustomPainter {
   final S initial;
   final S active;
   final Color? Function(E)? eventColor;
+  final String Function(S) stateLabel;
+  // Cached label for the active node so shouldRepaint catches label-only changes
+  // (e.g. when two grouped states share the same representative but differ in toString).
+  final String activeLabel;
 
-  const _ChartPainter({
+  _ChartPainter({
     required this.graph,
     required this.positions,
     required this.sizes,
     required this.ranks,
     required this.initial,
     required this.active,
+    required this.stateLabel,
     this.eventColor,
-  });
+  }) : activeLabel = stateLabel(active);
 
   @override
   bool shouldRepaint(_ChartPainter<S, E> old) =>
       old.active != active ||
+      old.activeLabel != activeLabel ||
       !identical(old.graph, graph) ||
       !identical(old.positions, positions);
 
@@ -619,7 +630,7 @@ class _ChartPainter<S extends Object, E extends Object> extends CustomPainter {
 
     final tp = TextPainter(
       text: TextSpan(
-        text: state.toString(),
+        text: stateLabel(state),
         style: _nodeLabelStyle.copyWith(
           color: isActive ? const Color(0xFF1E3A8A) : Colors.black87,
         ),

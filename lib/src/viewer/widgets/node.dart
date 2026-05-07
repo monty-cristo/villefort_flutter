@@ -35,6 +35,77 @@ class NodeColors {
   static const stateChipBg = Color(0xFF1A1B2E);
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                    TYPES                                   */
+/* -------------------------------------------------------------------------- */
+
+class StatelessNodeCard extends StatelessWidget {
+  final String title;
+
+  const StatelessNodeCard({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      // width: 300,
+      color: Colors.red,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          spacing: 10,
+          children: [
+            const _NodeIcon(),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: NodeColors.textWhite,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.1,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class NodeCardContainer extends StatelessWidget {
+  final double width;
+
+  final Widget child;
+
+  const NodeCardContainer({
+    super.key,
+    required this.width,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        color: NodeColors.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: NodeColors.cardBorder, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.55),
+            blurRadius: 32,
+            spreadRadius: 4,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
 // ─── Main Widget ─────────────────────────────────────────────────────────────
 
 class ProcessNodeCard extends StatefulWidget {
@@ -127,24 +198,11 @@ class _ProcessNodeCardState extends State<ProcessNodeCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: switch(widget.description) {
+    return NodeCardContainer(
+      width: switch (widget.description) {
         None<String>() => 300,
         Some<String>() => 480,
       },
-      decoration: BoxDecoration(
-        color: NodeColors.cardBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: NodeColors.cardBorder, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.55),
-            blurRadius: 32,
-            spreadRadius: 4,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
       child: Column(
         mainAxisSize: .min,
         crossAxisAlignment: .stretch,
@@ -174,6 +232,29 @@ class _ProcessNodeCardState extends State<ProcessNodeCard> {
   }
 }
 
+// ─── Node Icon ───────────────────────────────────────────────────────────────
+
+class _NodeIcon extends StatelessWidget {
+  const _NodeIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        color: NodeColors.dotsBg,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: const Icon(
+        Icons.storage_rounded,
+        color: NodeColors.textWhite,
+        size: 17,
+      ),
+    );
+  }
+}
+
 // ─── Header ──────────────────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
@@ -190,25 +271,11 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      padding: const EdgeInsets.all(12),
       child: Row(
+        spacing: 10,
         children: [
-          // Node icon
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: NodeColors.dotsBg,
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: const Icon(
-              Icons.storage_rounded,
-              color: NodeColors.textWhite,
-              size: 17,
-            ),
-          ),
-          const SizedBox(width: 10),
-          // Title (tappable to collapse)
+          const _NodeIcon(),
           Expanded(
             child: GestureDetector(
               onTap: onCollapseToggle,
@@ -218,14 +285,12 @@ class _Header extends StatelessWidget {
                 style: const TextStyle(
                   color: NodeColors.textWhite,
                   fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: .w600,
                   letterSpacing: 0.1,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          // Collapse chevron
           GestureDetector(
             onTap: onCollapseToggle,
             child: AnimatedRotation(
@@ -271,8 +336,8 @@ class _CollapsibleSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: .min,
+      crossAxisAlignment: .stretch,
       children: [
         // Section header
         InkWell(
@@ -286,15 +351,16 @@ class _CollapsibleSection extends StatelessWidget {
                   style: const TextStyle(
                     color: NodeColors.headerOrange,
                     fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: .w600,
                     letterSpacing: 0.3,
                   ),
                 ),
                 const Spacer(),
                 Icon(
-                  expanded
-                      ? Icons.keyboard_arrow_up
-                      : Icons.keyboard_arrow_down,
+                  switch (expanded) {
+                    true => Icons.keyboard_arrow_up,
+                    false => Icons.keyboard_arrow_down,
+                  },
                   color: NodeColors.headerOrange,
                   size: 16,
                 ),
@@ -320,7 +386,7 @@ class _ActionsList extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: actions.map((action) => _ActionItem(label: action)).toList(),
       ),
     );
@@ -336,13 +402,13 @@ class _ActionItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
+        spacing: 7,
         children: [
           const Icon(
             Icons.settings_rounded,
             color: NodeColors.actionIconRed,
             size: 13,
           ),
-          const SizedBox(width: 7),
           Flexible(
             child: Text(
               label,
@@ -362,6 +428,7 @@ class _ActionItem extends StatelessWidget {
 
 class _InvocationItem extends StatelessWidget {
   final String label;
+
   const _InvocationItem({required this.label});
 
   @override
@@ -369,17 +436,17 @@ class _InvocationItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       child: Row(
+        spacing: 7,
         children: [
           const Text(
             '<>',
             style: TextStyle(
               color: NodeColors.codeGreen,
               fontSize: 10,
-              fontWeight: FontWeight.w600,
+              fontWeight: .w600,
               fontFamily: 'monospace',
             ),
           ),
-          const SizedBox(width: 7),
           Flexible(
             child: Text(
               label,
@@ -420,12 +487,10 @@ class _ActorChip extends StatelessWidget {
   const _ActorChip({required this.actor});
 
   IconData get _icon {
-    switch (actor.type) {
-      case ActorIconType.storage:
-        return Icons.storage_rounded;
-      case ActorIconType.hub:
-        return Icons.hub_rounded;
-    }
+    return switch (actor.type) {
+      .storage => Icons.storage_rounded,
+      .hub => Icons.hub_rounded,
+    };
   }
 
   @override
@@ -438,10 +503,10 @@ class _ActorChip extends StatelessWidget {
         border: Border.all(color: NodeColors.chipBorder, width: 1),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        spacing: 6,
+        mainAxisSize: .min,
         children: [
           Icon(_icon, color: NodeColors.textGray, size: 13),
-          const SizedBox(width: 6),
           Text(
             actor.name,
             style: const TextStyle(color: NodeColors.textWhite, fontSize: 11.5),

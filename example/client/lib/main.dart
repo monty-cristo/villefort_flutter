@@ -115,7 +115,7 @@ class Idle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ProcessNodeCard(title: 'Idle');
+    return StatelessNodeCard(title: 'Idle');
   }
 }
 

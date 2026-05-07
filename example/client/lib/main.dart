@@ -124,7 +124,11 @@ class Connecting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ProcessNodeCard(title: 'Connecting', invocation: Some('connect()'));
+    return ProcessNodeCard(
+      title: 'Connecting',
+      description: Some('Trying to connect for the first time'),
+      invocation: Some('connect()'),
+    );
   }
 }
 
@@ -135,8 +139,10 @@ class Connected extends StatelessWidget {
   Widget build(BuildContext context) {
     return ProcessNodeCard(
       title: 'Connected',
-      description: Some(('First time connected. Listens to the connection for disconnnects')),
-      actors: Some(const [ActorData(name: 'Client', type: .hub)]),
+      description: Some(
+        ('First time connected. Listens to the connection for disconnnects'),
+      ),
+      actors: Some(const [ChipData(name: 'Client', icon: Icons.stream)]),
     );
   }
 }

@@ -3,12 +3,11 @@ import 'package:villefort/villefort.dart';
 
 // ─── Data Models ────────────────────────────────────────────────────────────
 
-enum ActorIconType { storage, hub }
-
-class ActorData {
+class ChipData {
   final String name;
-  final ActorIconType type;
-  const ActorData({required this.name, required this.type});
+  final IconData icon;
+
+  const ChipData({required this.name, required this.icon});
 }
 
 // ─── Color Palette ───────────────────────────────────────────────────────────
@@ -46,9 +45,8 @@ class StatelessNodeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      // width: 300,
-      color: Colors.red,
+    return NodeCardContainer(
+      width: 200,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -88,6 +86,7 @@ class NodeCardContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: width,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: NodeColors.cardBg,
         borderRadius: BorderRadius.circular(14),
@@ -111,9 +110,11 @@ class NodeCardContainer extends StatelessWidget {
 class ProcessNodeCard extends StatefulWidget {
   final String title;
   final Option<String> description;
-  final Option<List<String>> actions;
+
+  final Option<List<ChipData>> actions;
+  final Option<List<ChipData>> actors;
+
   final Option<String> invocation;
-  final Option<List<ActorData>> actors;
 
   const ProcessNodeCard({
     super.key,
@@ -131,7 +132,6 @@ class ProcessNodeCard extends StatefulWidget {
 class _ProcessNodeCardState extends State<ProcessNodeCard> {
   bool _isCollapsed = false;
   bool _actionsExpanded = true;
-  bool _invocationExpanded = true;
   bool _actorsExpanded = true;
 
   List<Widget> _buildBody() {
@@ -168,15 +168,7 @@ class _ProcessNodeCardState extends State<ProcessNodeCard> {
 
     if (widget.invocation case Some(:final value)) {
       if (widget.actions.isSome()) children.add(_Divider());
-      children.add(
-        _CollapsibleSection(
-          title: 'Invocation',
-          expanded: _invocationExpanded,
-          onToggle: () =>
-              setState(() => _invocationExpanded = !_invocationExpanded),
-          child: _InvocationItem(label: value),
-        ),
-      );
+      children.add(_InvocationItem(label: value));
     }
 
     if (widget.actors case Some(:final value)) {
@@ -378,47 +370,26 @@ class _CollapsibleSection extends StatelessWidget {
 // ─── Actions List ─────────────────────────────────────────────────────────────
 
 class _ActionsList extends StatelessWidget {
-  final List<String> actions;
+  final List<ChipData> actions;
+
   const _ActionsList({required this.actions});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      child: Column(
-        mainAxisSize: .min,
-        children: actions.map((action) => _ActionItem(label: action)).toList(),
-      ),
-    );
-  }
-}
-
-class _ActionItem extends StatelessWidget {
-  final String label;
-  const _ActionItem({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        spacing: 7,
-        children: [
-          const Icon(
-            Icons.settings_rounded,
-            color: NodeColors.actionIconRed,
-            size: 13,
-          ),
-          Flexible(
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: NodeColors.textWhite,
-                fontSize: 11.5,
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 6,
+        children: actions
+            .map(
+              (a) => _Chip(
+                label: a.name,
+                icon: a.icon,
+                iconColor: NodeColors.actionIconRed,
               ),
-            ),
-          ),
-        ],
+            )
+            .toList(),
       ),
     );
   }
@@ -433,29 +404,49 @@ class _InvocationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      child: Row(
-        spacing: 7,
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A1C10),
+        border: Border(left: BorderSide(color: NodeColors.codeGreen, width: 3)),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '<>',
+            'INVOCATION',
             style: TextStyle(
-              color: NodeColors.codeGreen,
-              fontSize: 10,
-              fontWeight: .w600,
-              fontFamily: 'monospace',
+              color: NodeColors.headerOrange,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
             ),
           ),
-          Flexible(
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: NodeColors.codeGreen,
-                fontSize: 11,
-                fontFamily: 'monospace',
+          const SizedBox(height: 6),
+          Row(
+            spacing: 8,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '\$',
+                style: TextStyle(
+                  color: NodeColors.codeGreen,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'monospace',
+                ),
               ),
-            ),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: NodeColors.codeGreen,
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -466,7 +457,8 @@ class _InvocationItem extends StatelessWidget {
 // ─── Actors List ─────────────────────────────────────────────────────────────
 
 class _ActorsList extends StatelessWidget {
-  final List<ActorData> actors;
+  final List<ChipData> actors;
+
   const _ActorsList({required this.actors});
 
   @override
@@ -476,22 +468,32 @@ class _ActorsList extends StatelessWidget {
       child: Wrap(
         spacing: 10,
         runSpacing: 6,
-        children: actors.map((a) => _ActorChip(actor: a)).toList(),
+        children: actors
+            .map(
+              (a) => _Chip(
+                label: a.name,
+                icon: a.icon,
+                iconColor: NodeColors.textGray,
+              ),
+            )
+            .toList(),
       ),
     );
   }
 }
 
-class _ActorChip extends StatelessWidget {
-  final ActorData actor;
-  const _ActorChip({required this.actor});
+// ─── Chip ─────────────────────────────────────────────────────────────────────
 
-  IconData get _icon {
-    return switch (actor.type) {
-      .storage => Icons.storage_rounded,
-      .hub => Icons.hub_rounded,
-    };
-  }
+class _Chip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color iconColor;
+
+  const _Chip({
+    required this.label,
+    required this.icon,
+    required this.iconColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -504,11 +506,11 @@ class _ActorChip extends StatelessWidget {
       ),
       child: Row(
         spacing: 6,
-        mainAxisSize: .min,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_icon, color: NodeColors.textGray, size: 13),
+          Icon(icon, color: iconColor, size: 13),
           Text(
-            actor.name,
+            label,
             style: const TextStyle(color: NodeColors.textWhite, fontSize: 11.5),
           ),
         ],

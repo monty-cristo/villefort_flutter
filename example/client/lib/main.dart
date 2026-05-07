@@ -55,16 +55,80 @@ class ClientMachineViewerApp extends StatelessWidget {
         initial: ClientStateIdle(),
         transition: transition,
         generate: generate,
-        eventColor: (event) => switch (event) {
-          ClientEventConnectOk() => Colors.green,
-          ClientEventConnectErr() => Colors.red,
-          ClientEventDisconnectOk() => Colors.green,
-          ClientEventDisconnectErr() => Colors.red,
-          ClientEventReconnectOk() => Colors.green,
-          ClientEventReconnectErr() => Colors.red,
-          _ => null,
+        builder: (state) {
+          return switch (state) {
+            ClientStateIdle() => ProcessNodeCard(
+              title: 'Request Update',
+              description:
+                  'Processes an update request and validates the data before writing to the storage system.',
+              actions: const ['Validate Request', 'Transform Data'],
+              invocations: const [
+                'validateData()',
+                'saveToDatabase()',
+                'notifySubscribers()',
+              ],
+              actors: const [
+                ActorData(name: 'Client', type: ActorIconType.storage),
+                ActorData(name: 'API Gateway', type: ActorIconType.hub),
+                ActorData(name: 'Update Service', type: ActorIconType.storage),
+              ],
+            ),
+            ClientStateConnecting() => Container(
+              width: 300,
+              height: 100,
+              color: Colors.indigo,
+              child: Center(child: Text(state.toString())),
+            ),
+            ClientStateConnected() => Container(
+              width: 200,
+              height: 100,
+              color: Colors.indigo,
+              child: Center(child: Text(state.toString())),
+            ),
+            ClientStateDisconnecting() => Container(
+              width: 400,
+              height: 100,
+              color: Colors.indigo,
+              child: Center(child: Text(state.toString())),
+            ),
+            ClientStateDisconnected() => Container(
+              width: 200,
+              height: 100,
+              color: Colors.indigo,
+              child: Center(child: Text(state.toString())),
+            ),
+            ClientStateReconnecting() => Container(
+              width: 200,
+              height: 100,
+              color: Colors.indigo,
+              child: Center(child: Text(state.toString())),
+            ),
+            ClientStateReconnected() => Container(
+              width: 500,
+              height: 100,
+              color: Colors.indigo,
+              child: Center(child: Text(state.toString())),
+            ),
+            ClientStateWaitingToRetryConnect() => Container(
+              width: 250,
+              height: 100,
+              color: Colors.indigo,
+              child: Center(child: Text(state.toString())),
+            ),
+            ClientStateWaitingToRetryReconnect() => Container(
+              width: 300,
+              height: 100,
+              color: Colors.indigo,
+              child: Center(child: Text(state.toString())),
+            ),
+            ClientStateError() => Container(
+              width: 200,
+              height: 100,
+              color: Colors.indigo,
+              child: Center(child: Text(state.toString())),
+            ),
+          };
         },
-        //sameGroup: (a, b) => a.runtimeType == b.runtimeType,
       ),
     );
   }

@@ -61,48 +61,17 @@ class ClientMachineViewerApp extends StatelessWidget {
             ClientStateIdle() => Idle(),
             ClientStateConnecting() => Connecting(),
             ClientStateConnected() => Connected(),
-            ClientStateDisconnecting() => Container(
-              width: 400,
-              height: 100,
-              color: Colors.indigo,
-              child: Center(child: Text(state.toString())),
+            ClientStateDisconnecting() => Disconnecting(),
+            ClientStateDisconnected() => Disconnected(),
+            ClientStateReconnecting() => Reconnecting(),
+            ClientStateReconnected() => Reconnected(),
+            ClientStateWaitingToRetryConnect() => WaitingToRetry(
+              title: 'Waiting Retry Connect',
             ),
-            ClientStateDisconnected() => Container(
-              width: 200,
-              height: 100,
-              color: Colors.indigo,
-              child: Center(child: Text(state.toString())),
+            ClientStateWaitingToRetryReconnect() => WaitingToRetry(
+              title: 'Waiting Retry Reconnect',
             ),
-            ClientStateReconnecting() => Container(
-              width: 200,
-              height: 100,
-              color: Colors.indigo,
-              child: Center(child: Text(state.toString())),
-            ),
-            ClientStateReconnected() => Container(
-              width: 500,
-              height: 100,
-              color: Colors.indigo,
-              child: Center(child: Text(state.toString())),
-            ),
-            ClientStateWaitingToRetryConnect() => Container(
-              width: 250,
-              height: 100,
-              color: Colors.indigo,
-              child: Center(child: Text(state.toString())),
-            ),
-            ClientStateWaitingToRetryReconnect() => Container(
-              width: 300,
-              height: 100,
-              color: Colors.indigo,
-              child: Center(child: Text(state.toString())),
-            ),
-            ClientStateError() => Container(
-              width: 200,
-              height: 100,
-              color: Colors.indigo,
-              child: Center(child: Text(state.toString())),
-            ),
+            ClientStateError(:final error) => Error(error: error),
           };
         },
       ),
@@ -132,6 +101,32 @@ class Connecting extends StatelessWidget {
   }
 }
 
+class Disconnecting extends StatelessWidget {
+  const Disconnecting({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ProcessNodeCard(
+      title: 'Disconnecting',
+      description: Some('Trying to disconnect'),
+      invocation: Some('disconnect()'),
+    );
+  }
+}
+
+class Reconnecting extends StatelessWidget {
+  const Reconnecting({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ProcessNodeCard(
+      title: 'Reconnecting',
+      description: Some('Trying to reconnect'),
+      invocation: Some('connect()'),
+    );
+  }
+}
+
 class Connected extends StatelessWidget {
   const Connected({super.key});
 
@@ -147,19 +142,51 @@ class Connected extends StatelessWidget {
   }
 }
 
+class Disconnected extends StatelessWidget {
+  const Disconnected({super.key});
 
+  @override
+  Widget build(BuildContext context) {
+    return ProcessNodeCard(
+      title: 'Disconnected',
+      description: Some(
+        ('First time connected. Listens to the connection for disconnnects'),
+      ),
+    );
+  }
+}
 
+class Reconnected extends StatelessWidget {
+  const Reconnected({super.key});
 
-    // return ProcessNodeCard(
-    //   title: 'Idle',
-    //   description: Some(
-    //     'Processes an update request and validates the data before writing to the storage system.',
-    //   ),
-    //   actions: Some(const ['Validate Request', 'Transform Data']),
-    //   invocation: Some('validateData()'),
-    //   actors: const [
-    //     ActorData(name: 'Client', type: ActorIconType.storage),
-    //     ActorData(name: 'API Gateway', type: ActorIconType.hub),
-    //     ActorData(name: 'Update Service', type: ActorIconType.storage),
-    //   ],
-    // );
+  @override
+  Widget build(BuildContext context) {
+    return ProcessNodeCard(
+      title: 'Reconnected',
+      description: Some((' Listens to the connection for disconnnects')),
+      actors: Some(const [ChipData(name: 'Client', icon: Icons.stream)]),
+    );
+  }
+}
+
+class WaitingToRetry extends StatelessWidget {
+  final String title;
+
+  const WaitingToRetry({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return StatelessNodeCard(title: title);
+  }
+}
+
+class Error extends StatelessWidget {
+  final ClientError error;
+
+  const Error({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return StatelessNodeCard(title: 'Error($error)');
+  }
+}

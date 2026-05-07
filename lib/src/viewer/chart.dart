@@ -127,14 +127,35 @@ class RenderStateGraph<S extends Object, E extends Object> extends RenderBox
       ..color = const Color(0xFF607D8B)
       ..style = PaintingStyle.fill;
 
-    for (final edges in _graph.edges) {
-      final fromRect = rects[edges.from];
-      final toRect = rects[edges.to];
+    for (final edge in _graph.edges) {
+      final fromRect = rects[edge.from];
+      final toRect = rects[edge.to];
       if (fromRect == null || toRect == null) continue;
 
       final src = Offset(fromRect.right, fromRect.center.dy);
-      final dst = Offset(toRect.left, toRect.center.dy);
 
+      // Detect nodes whose bounding box overlaps the edge corridor
+      final blockers = rects.entries
+          .where((e) => e.key != edge.from && e.key != edge.to)
+          .map((e) => e.value)
+          .where((r) =>
+              r.left < toRect.left &&
+              r.right > fromRect.right &&
+              r.top < math.max(fromRect.bottom, toRect.bottom) &&
+              r.bottom > math.min(fromRect.top, toRect.top))
+          .toList();
+
+      if (blockers.isNotEmpty && toRect.left > fromRect.right) {
+        final routeY = blockers.map((r) => r.top).reduce(math.min) - 24.0;
+        if (routeY < src.dy) {
+          final tip = Offset(toRect.center.dx, toRect.top);
+          canvas.drawPath(_routeAbovePath(src, tip, routeY), stroke);
+          _paintArrowhead(canvas, fill, tip, pointDown: true);
+          continue;
+        }
+      }
+
+      final dst = Offset(toRect.left, toRect.center.dy);
       canvas.drawPath(_orthogonalPath(src, dst), stroke);
       _paintArrowhead(canvas, fill, dst);
     }
@@ -210,14 +231,34 @@ class RenderStateGraph<S extends Object, E extends Object> extends RenderBox
     return path;
   }
 
-  void _paintArrowhead(Canvas canvas, Paint paint, Offset tip) {
+  // Routes src → up to routeY → right → down to tip (top-center of destination)
+  Path _routeAbovePath(Offset src, Offset tip, double routeY) {
+    const r = 8.0;
+    final path = Path()..moveTo(src.dx, src.dy);
+    path.lineTo(src.dx, routeY + r);
+    // Up → Right (clockwise on screen)
+    path.arcToPoint(Offset(src.dx + r, routeY), radius: Radius.circular(r), clockwise: true);
+    path.lineTo(math.max(src.dx + r, tip.dx - r), routeY);
+    // Right → Down (clockwise on screen)
+    path.arcToPoint(Offset(tip.dx, routeY + r), radius: Radius.circular(r), clockwise: true);
+    path.lineTo(tip.dx, tip.dy);
+    return path;
+  }
+
+  void _paintArrowhead(Canvas canvas, Paint paint, Offset tip, {bool pointDown = false}) {
     const sa = 8.0;
     canvas.drawPath(
-      Path()
-        ..moveTo(tip.dx, tip.dy)
-        ..lineTo(tip.dx - sa, tip.dy - sa / 2)
-        ..lineTo(tip.dx - sa, tip.dy + sa / 2)
-        ..close(),
+      pointDown
+          ? (Path()
+            ..moveTo(tip.dx, tip.dy)
+            ..lineTo(tip.dx - sa / 2, tip.dy - sa)
+            ..lineTo(tip.dx + sa / 2, tip.dy - sa)
+            ..close())
+          : (Path()
+            ..moveTo(tip.dx, tip.dy)
+            ..lineTo(tip.dx - sa, tip.dy - sa / 2)
+            ..lineTo(tip.dx - sa, tip.dy + sa / 2)
+            ..close()),
       paint,
     );
   }

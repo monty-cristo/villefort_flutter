@@ -143,6 +143,20 @@ class RenderStateGraph<S extends Object, E extends Object> extends RenderBox
   Path _orthogonalPath(Offset src, Offset dst, {double radius = 8.0}) {
     final path = Path()..moveTo(src.dx, src.dy);
 
+    // Back edge: destination is to the left of source — loop below
+    if (dst.dx < src.dx) {
+      const r = 8.0;
+      final bottom = math.max(src.dy, dst.dy) + 60.0;
+      path.lineTo(src.dx, bottom - r);
+      // Down → Left (clockwise on screen)
+      path.arcToPoint(Offset(src.dx - r, bottom), radius: Radius.circular(r), clockwise: true);
+      path.lineTo(dst.dx + r, bottom);
+      // Left → Up (clockwise on screen)
+      path.arcToPoint(Offset(dst.dx, bottom - r), radius: Radius.circular(r), clockwise: true);
+      path.lineTo(dst.dx, dst.dy);
+      return path;
+    }
+
     // Same row — no bends needed
     if ((src.dy - dst.dy).abs() <= 1) {
       return path..lineTo(dst.dx, dst.dy);

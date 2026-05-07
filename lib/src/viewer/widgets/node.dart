@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:villefort/villefort.dart';
 
 // ─── Data Models ────────────────────────────────────────────────────────────
 
@@ -38,19 +39,18 @@ class NodeColors {
 
 class ProcessNodeCard extends StatefulWidget {
   final String title;
-  final String description;
-  
-  final List<String> actions;
-  final List<String> invocations;
-  final List<ActorData> actors;
+  final Option<String> description;
+  final Option<List<String>> actions;
+  final Option<String> invocation;
+  final Option<List<ActorData>> actors;
 
   const ProcessNodeCard({
     super.key,
     required this.title,
-    required this.description,
-    required this.actions,
-    required this.invocations,
-    required this.actors,
+    this.description = const None(),
+    this.actions = const None(),
+    this.invocation = const None(),
+    this.actors = const None(),
   });
 
   @override
@@ -60,20 +60,85 @@ class ProcessNodeCard extends StatefulWidget {
 class _ProcessNodeCardState extends State<ProcessNodeCard> {
   bool _isCollapsed = false;
   bool _actionsExpanded = true;
-  bool _invocationsExpanded = true;
+  bool _invocationExpanded = true;
   bool _actorsExpanded = true;
+
+  List<Widget> _buildBody() {
+    final children = <Widget>[];
+
+    if (widget.description case Some(:final value)) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: NodeColors.textGray,
+              fontSize: 12.5,
+              height: 1.55,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ),
+      );
+      children.add(_Divider());
+    }
+
+    if (widget.actions case Some(:final value)) {
+      children.add(
+        _CollapsibleSection(
+          title: 'Actions',
+          expanded: _actionsExpanded,
+          onToggle: () => setState(() => _actionsExpanded = !_actionsExpanded),
+          child: _ActionsList(actions: value),
+        ),
+      );
+    }
+
+    if (widget.invocation case Some(:final value)) {
+      if (widget.actions.isSome()) children.add(_Divider());
+      children.add(
+        _CollapsibleSection(
+          title: 'Invocation',
+          expanded: _invocationExpanded,
+          onToggle: () =>
+              setState(() => _invocationExpanded = !_invocationExpanded),
+          child: _InvocationItem(label: value),
+        ),
+      );
+    }
+
+    if (widget.actors case Some(:final value)) {
+      if (widget.actions.isSome() || widget.invocation.isSome()) {
+        children.add(_Divider());
+      }
+      children.add(
+        _CollapsibleSection(
+          title: 'Actors',
+          expanded: _actorsExpanded,
+          onToggle: () => setState(() => _actorsExpanded = !_actorsExpanded),
+          child: _ActorsList(actors: value),
+        ),
+      );
+    }
+
+    return children;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 420,
+      width: switch(widget.description) {
+        None<String>() => 300,
+        Some<String>() => 480,
+      },
       decoration: BoxDecoration(
         color: NodeColors.cardBg,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: NodeColors.cardBorder, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.55),
+            color: Colors.black.withValues(alpha: 0.55),
             blurRadius: 32,
             spreadRadius: 4,
             offset: const Offset(0, 8),
@@ -81,89 +146,27 @@ class _ProcessNodeCardState extends State<ProcessNodeCard> {
         ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: .min,
+        crossAxisAlignment: .stretch,
         children: [
-          // ── Header (always visible) ──────────────────────────────────────
           _Header(
             title: widget.title,
             isCollapsed: _isCollapsed,
             onCollapseToggle: () =>
                 setState(() => _isCollapsed = !_isCollapsed),
           ),
-
-          // ── Animated body ────────────────────────────────────────────────
           AnimatedSize(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: _isCollapsed
-                ? const SizedBox.shrink()
-                : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // ── Description ───────────────────────────────────────
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                        child: Text(
-                          widget.description,
-                          style: const TextStyle(
-                            color: NodeColors.textGray,
-                            fontSize: 12.5,
-                            height: 1.55,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
-                      ),
-
-                      _Divider(),
-
-                      // ── Actions + Invocations (side by side) ──────────────
-                      IntrinsicHeight(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: _CollapsibleSection(
-                                title: 'Actions',
-                                expanded: _actionsExpanded,
-                                onToggle: () => setState(
-                                  () => _actionsExpanded = !_actionsExpanded,
-                                ),
-                                child: _ActionsList(actions: widget.actions),
-                              ),
-                            ),
-                            Container(width: 1, color: NodeColors.divider),
-                            Expanded(
-                              child: _CollapsibleSection(
-                                title: 'Invocations',
-                                expanded: _invocationsExpanded,
-                                onToggle: () => setState(
-                                  () => _invocationsExpanded =
-                                      !_invocationsExpanded,
-                                ),
-                                child: _InvocationsList(
-                                  invocations: widget.invocations,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      _Divider(),
-
-                      // ── Actors ────────────────────────────────────────────
-                      _CollapsibleSection(
-                        title: 'Actors',
-                        expanded: _actorsExpanded,
-                        onToggle: () =>
-                            setState(() => _actorsExpanded = !_actorsExpanded),
-                        child: _ActorsList(actors: widget.actors),
-                      ),
-                    ],
-                  ),
+            alignment: .topCenter,
+            child: switch (_isCollapsed) {
+              true => const SizedBox.shrink(),
+              false => Column(
+                mainAxisSize: .min,
+                crossAxisAlignment: .stretch,
+                children: _buildBody(),
+              ),
+            },
           ),
         ],
       ),
@@ -209,7 +212,7 @@ class _Header extends StatelessWidget {
           Expanded(
             child: GestureDetector(
               onTap: onCollapseToggle,
-              behavior: HitTestBehavior.opaque,
+              behavior: .opaque,
               child: Text(
                 title,
                 style: const TextStyle(
@@ -355,25 +358,7 @@ class _ActionItem extends StatelessWidget {
   }
 }
 
-// ─── Invocations List ────────────────────────────────────────────────────────
-
-class _InvocationsList extends StatelessWidget {
-  final List<String> invocations;
-  const _InvocationsList({required this.invocations});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: invocations
-            .map((inv) => _InvocationItem(label: inv))
-            .toList(),
-      ),
-    );
-  }
-}
+// ─── Invocation Item ─────────────────────────────────────────────────────────
 
 class _InvocationItem extends StatelessWidget {
   final String label;
@@ -382,7 +367,7 @@ class _InvocationItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       child: Row(
         children: [
           const Text(

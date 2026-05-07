@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:villefort/villefort.dart';
 import 'package:villefort_flutter/villefort_flutter.dart';
 
 import 'client/machine.dart';
@@ -57,34 +58,9 @@ class ClientMachineViewerApp extends StatelessWidget {
         generate: generate,
         builder: (state) {
           return switch (state) {
-            ClientStateIdle() => ProcessNodeCard(
-              title: 'Request Update',
-              description:
-                  'Processes an update request and validates the data before writing to the storage system.',
-              actions: const ['Validate Request', 'Transform Data'],
-              invocations: const [
-                'validateData()',
-                'saveToDatabase()',
-                'notifySubscribers()',
-              ],
-              actors: const [
-                ActorData(name: 'Client', type: ActorIconType.storage),
-                ActorData(name: 'API Gateway', type: ActorIconType.hub),
-                ActorData(name: 'Update Service', type: ActorIconType.storage),
-              ],
-            ),
-            ClientStateConnecting() => Container(
-              width: 300,
-              height: 100,
-              color: Colors.indigo,
-              child: Center(child: Text(state.toString())),
-            ),
-            ClientStateConnected() => Container(
-              width: 200,
-              height: 100,
-              color: Colors.indigo,
-              child: Center(child: Text(state.toString())),
-            ),
+            ClientStateIdle() => Idle(),
+            ClientStateConnecting() => Connecting(),
+            ClientStateConnected() => Connected(),
             ClientStateDisconnecting() => Container(
               width: 400,
               height: 100,
@@ -133,3 +109,51 @@ class ClientMachineViewerApp extends StatelessWidget {
     );
   }
 }
+
+class Idle extends StatelessWidget {
+  const Idle({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ProcessNodeCard(title: 'Idle');
+  }
+}
+
+class Connecting extends StatelessWidget {
+  const Connecting({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ProcessNodeCard(title: 'Connecting', invocation: Some('connect()'));
+  }
+}
+
+class Connected extends StatelessWidget {
+  const Connected({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ProcessNodeCard(
+      title: 'Connected',
+      description: Some(('First time connected. Listens to the connection for disconnnects')),
+      actors: Some(const [ActorData(name: 'Client', type: .hub)]),
+    );
+  }
+}
+
+
+
+
+    // return ProcessNodeCard(
+    //   title: 'Idle',
+    //   description: Some(
+    //     'Processes an update request and validates the data before writing to the storage system.',
+    //   ),
+    //   actions: Some(const ['Validate Request', 'Transform Data']),
+    //   invocation: Some('validateData()'),
+    //   actors: const [
+    //     ActorData(name: 'Client', type: ActorIconType.storage),
+    //     ActorData(name: 'API Gateway', type: ActorIconType.hub),
+    //     ActorData(name: 'Update Service', type: ActorIconType.storage),
+    //   ],
+    // );

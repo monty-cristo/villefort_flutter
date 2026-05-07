@@ -46,25 +46,16 @@ class StatelessNodeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NodeCardContainer(
-      width: 200,
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
-          spacing: 10,
-          children: [
-            const _NodeIcon(),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: NodeColors.textWhite,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.1,
-                ),
-              ),
-            ),
-          ],
+        child: Text(
+          title,
+          style: const TextStyle(
+            color: NodeColors.textWhite,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
+          ),
         ),
       ),
     );
@@ -72,20 +63,22 @@ class StatelessNodeCard extends StatelessWidget {
 }
 
 class NodeCardContainer extends StatelessWidget {
-  final double width;
-
+  final Option<double> width;
   final Widget child;
 
   const NodeCardContainer({
     super.key,
-    required this.width,
+    this.width = const None(),
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: width,
+      width: switch (width) {
+        Some(:final value) => value,
+        None() => null,
+      },
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: NodeColors.cardBg,
@@ -192,8 +185,8 @@ class _ProcessNodeCardState extends State<ProcessNodeCard> {
   Widget build(BuildContext context) {
     return NodeCardContainer(
       width: switch (widget.description) {
-        None<String>() => 300,
-        Some<String>() => 480,
+        None<String>() => const Some(300),
+        Some<String>() => const Some(300),
       },
       child: Column(
         mainAxisSize: .min,
@@ -224,29 +217,6 @@ class _ProcessNodeCardState extends State<ProcessNodeCard> {
   }
 }
 
-// ─── Node Icon ───────────────────────────────────────────────────────────────
-
-class _NodeIcon extends StatelessWidget {
-  const _NodeIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 30,
-      height: 30,
-      decoration: BoxDecoration(
-        color: NodeColors.dotsBg,
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: const Icon(
-        Icons.storage_rounded,
-        color: NodeColors.textWhite,
-        size: 17,
-      ),
-    );
-  }
-}
-
 // ─── Header ──────────────────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
@@ -267,7 +237,6 @@ class _Header extends StatelessWidget {
       child: Row(
         spacing: 10,
         children: [
-          const _NodeIcon(),
           Expanded(
             child: GestureDetector(
               onTap: onCollapseToggle,

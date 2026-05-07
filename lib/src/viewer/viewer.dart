@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:villefort/villefort.dart';
-import 'package:villefort_flutter/src/viewer/algorithm/sugiyama.dart';
-import 'package:villefort_flutter/src/viewer/chart.dart';
 
+import 'algorithm/sugiyama.dart';
 import 'chart.dart';
 import 'widgets/node.dart';
 
@@ -47,11 +46,6 @@ class _MachineViewerState<S extends Object, E extends Object>
       generate: widget.generate,
       transition: widget.transition,
     ).explore(widget.initial);
-
-    _rawGraph.vertices.forEach(print);
-    print(
-      '/* ------------------------------------ a ----------------------------------- */',
-    );
   }
 
   void _send(E event) {
@@ -95,14 +89,10 @@ class _MachineViewerState<S extends Object, E extends Object>
               constrained: false,
               minScale: 0.1,
               maxScale: 5,
-              child: SizedBox(
-                width: 1000,
-                height: 1000,
-                child: StateGraph(
-                  graph: _rawGraph,
-                  algorithm: LayoutAlgorithmSugiyama(),
-                  builder: widget.builder,
-                ),
+              child: StateGraph<S, E>(
+                graph: _rawGraph,
+                algorithm: LayoutAlgorithmSugiyama(),
+                builder: widget.builder,
               ),
             ),
           ),

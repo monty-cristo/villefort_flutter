@@ -232,15 +232,15 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        spacing: 10,
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: onCollapseToggle,
-              behavior: .opaque,
+    return GestureDetector(
+      onTap: onCollapseToggle,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          spacing: 10,
+          children: [
+            Expanded(
               child: Text(
                 title,
                 style: const TextStyle(
@@ -251,10 +251,7 @@ class _Header extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-          GestureDetector(
-            onTap: onCollapseToggle,
-            child: AnimatedRotation(
+            AnimatedRotation(
               turns: isCollapsed ? -0.25 : 0.0,
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeInOut,
@@ -264,8 +261,8 @@ class _Header extends StatelessWidget {
                 size: 20,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

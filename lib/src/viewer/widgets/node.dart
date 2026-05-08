@@ -40,12 +40,14 @@ class NodeColors {
 
 class StatelessNodeCard extends StatelessWidget {
   final String title;
+  final bool active;
 
-  const StatelessNodeCard({super.key, required this.title});
+  const StatelessNodeCard({super.key, required this.title, this.active = false});
 
   @override
   Widget build(BuildContext context) {
     return NodeCardContainer(
+      active: active,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Text(
@@ -64,11 +66,13 @@ class StatelessNodeCard extends StatelessWidget {
 
 class NodeCardContainer extends StatelessWidget {
   final Option<double> width;
+  final bool active;
   final Widget child;
 
   const NodeCardContainer({
     super.key,
     this.width = const None(),
+    this.active = false,
     required this.child,
   });
 
@@ -83,7 +87,10 @@ class NodeCardContainer extends StatelessWidget {
       decoration: BoxDecoration(
         color: NodeColors.cardBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: NodeColors.cardBorder, width: 1.5),
+        border: Border.all(
+          color: active ? NodeColors.btnBlue : NodeColors.cardBorder,
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.55),
@@ -91,6 +98,12 @@ class NodeCardContainer extends StatelessWidget {
             spreadRadius: 4,
             offset: const Offset(0, 8),
           ),
+          if (active)
+            BoxShadow(
+              color: NodeColors.btnBlue.withValues(alpha: 0.45),
+              blurRadius: 18,
+              spreadRadius: 3,
+            ),
         ],
       ),
       child: child,
@@ -108,6 +121,7 @@ class ProcessNodeCard extends StatefulWidget {
   final Option<List<ChipData>> actors;
 
   final Option<String> invocation;
+  final bool active;
 
   const ProcessNodeCard({
     super.key,
@@ -116,6 +130,7 @@ class ProcessNodeCard extends StatefulWidget {
     this.actions = const None(),
     this.invocation = const None(),
     this.actors = const None(),
+    this.active = false,
   });
 
   @override
@@ -188,6 +203,7 @@ class _ProcessNodeCardState extends State<ProcessNodeCard> {
         None<String>() => const Some(300),
         Some<String>() => const Some(300),
       },
+      active: widget.active,
       child: Column(
         mainAxisSize: .min,
         crossAxisAlignment: .stretch,

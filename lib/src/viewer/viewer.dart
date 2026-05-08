@@ -14,7 +14,7 @@ class MachineViewer<S extends Object, E extends Object> extends StatefulWidget {
 
   final GenerateEventFactory<S, E> generate;
 
-  final Widget Function(S state) builder;
+  final Widget Function(S state, bool active) builder;
 
   const MachineViewer({
     super.key,
@@ -92,7 +92,7 @@ class _MachineViewerState<S extends Object, E extends Object>
               child: StateGraph<S, E>(
                 graph: _rawGraph,
                 algorithm: LayoutAlgorithmSugiyama(),
-                builder: widget.builder,
+                builder: (state) => widget.builder(state, state == _current),
               ),
             ),
           ),

@@ -5,6 +5,7 @@ import 'package:villefort_flutter/villefort_flutter.dart';
 import 'auth/machine.dart';
 import 'client/machine.dart';
 import 'order/machine.dart';
+import 'replay_example.dart';
 import 'traffic_light/machine.dart';
 
 void main(List<String> args) {
@@ -47,6 +48,16 @@ class GraphsApp extends StatelessWidget {
               title: 'Traffic Light',
               subtitle: 'Simple 3-state cycle',
               app: const TrafficLightViewer(),
+            ),
+            _Tile(
+              title: 'Traffic Light — Replay',
+              subtitle: 'Hard-coded traffic light recording played back',
+              app: const TrafficReplayViewer(),
+            ),
+            _Tile(
+              title: 'Order Machine — Replay',
+              subtitle: 'Happy path then cancelled run, played back',
+              app: const OrderReplayViewer(),
             ),
           ],
         ),

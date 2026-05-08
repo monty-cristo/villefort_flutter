@@ -27,6 +27,20 @@ sealed class OrderState {
     OrderStateDelivered() => 7,
     OrderStateRefunded() => 8,
   };
+
+  @override
+  String toString() {
+    return switch (this) {
+      OrderStateIdle() => 'Idle',
+      OrderStatePending() => 'Pending',
+      OrderStateConfirmed() => 'Confirmed',
+      OrderStateFailed() => 'Failed',
+      OrderStateCancelled() => 'Cancelled',
+      OrderStateShipped() => 'Shipped',
+      OrderStateDelivered() => 'Delivered',
+      OrderStateRefunded() => 'Refunded',
+    };
+  }
 }
 
 final class OrderStateIdle extends OrderState {
@@ -63,6 +77,20 @@ final class OrderStateRefunded extends OrderState {
 
 sealed class OrderEvent {
   const OrderEvent();
+
+    @override
+  String toString() {
+    return switch (this) {
+      OrderEventPlace() => 'Place',
+      OrderEventConfirm() => 'Confirm',
+      OrderEventFail() => 'Fail',
+      OrderEventCancel() => 'Cancel',
+      OrderEventShip() => 'Ship',
+      OrderEventDeliver() => 'Deliver',
+      OrderEventRefund() => 'Refund',
+      OrderEventReset() => 'Reset',
+    };
+  }
 }
 
 final class OrderEventPlace extends OrderEvent {
@@ -112,27 +140,27 @@ List<OrderEvent> generateOrder(OrderState state) => switch (state) {
   OrderStateRefunded() => [const OrderEventReset()],
 };
 
-Option<OrderState> orderTransition(OrderState state, OrderEvent event) =>
-    switch ((state, event)) {
-      (OrderStateIdle(), OrderEventPlace()) => const Some(OrderStatePending()),
-      (OrderStatePending(), OrderEventConfirm()) => const Some(
-        OrderStateConfirmed(),
-      ),
-      (OrderStatePending(), OrderEventFail()) => const Some(OrderStateFailed()),
-      (OrderStatePending(), OrderEventCancel()) => const Some(
-        OrderStateCancelled(),
-      ),
-      (OrderStateConfirmed(), OrderEventShip()) => const Some(
-        OrderStateShipped(),
-      ),
-      (OrderStateShipped(), OrderEventDeliver()) => const Some(
-        OrderStateDelivered(),
-      ),
-      (OrderStateCancelled(), OrderEventRefund()) => const Some(
-        OrderStateRefunded(),
-      ),
-      (OrderStateFailed(), OrderEventReset()) => const Some(OrderStateIdle()),
-      (OrderStateDelivered(), OrderEventReset()) => const Some(OrderStateIdle()),
-      (OrderStateRefunded(), OrderEventReset()) => const Some(OrderStateIdle()),
-      _ => const None(),
-    };
+Option<OrderState> orderTransition(
+  OrderState state,
+  OrderEvent event,
+) => switch ((state, event)) {
+  (OrderStateIdle(), OrderEventPlace()) => const Some(OrderStatePending()),
+  (OrderStatePending(), OrderEventConfirm()) => const Some(
+    OrderStateConfirmed(),
+  ),
+  (OrderStatePending(), OrderEventFail()) => const Some(OrderStateFailed()),
+  (OrderStatePending(), OrderEventCancel()) => const Some(
+    OrderStateCancelled(),
+  ),
+  (OrderStateConfirmed(), OrderEventShip()) => const Some(OrderStateShipped()),
+  (OrderStateShipped(), OrderEventDeliver()) => const Some(
+    OrderStateDelivered(),
+  ),
+  (OrderStateCancelled(), OrderEventRefund()) => const Some(
+    OrderStateRefunded(),
+  ),
+  (OrderStateFailed(), OrderEventReset()) => const Some(OrderStateIdle()),
+  (OrderStateDelivered(), OrderEventReset()) => const Some(OrderStateIdle()),
+  (OrderStateRefunded(), OrderEventReset()) => const Some(OrderStateIdle()),
+  _ => const None(),
+};
